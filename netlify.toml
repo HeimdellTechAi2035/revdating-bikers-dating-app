@@ -1,0 +1,56 @@
+[build]
+  command = "npm run build"
+  publish  = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# ── Security headers (CDN layer — defence-in-depth on top of Next.js) ─────────
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options             = "DENY"
+    X-Content-Type-Options      = "nosniff"
+    Referrer-Policy             = "strict-origin-when-cross-origin"
+    X-DNS-Prefetch-Control      = "off"
+    X-Download-Options          = "noopen"
+    X-Permitted-Cross-Domain-Policies = "none"
+    Strict-Transport-Security   = "max-age=63072000; includeSubDomains; preload"
+    Permissions-Policy          = "camera=self, microphone=(), geolocation=self, payment=()"
+
+# ── Static assets — long cache ────────────────────────────────────────────────
+
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/icons/*"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+# ── Redirects ─────────────────────────────────────────────────────────────────
+
+# Force HTTPS (Netlify does this automatically, but explicit is clearer)
+[[redirects]]
+  from   = "http://revdating.co.uk/*"
+  to     = "https://revdating.co.uk/:splat"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "http://www.revdating.co.uk/*"
+  to     = "https://revdating.co.uk/:splat"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "https://www.revdating.co.uk/*"
+  to     = "https://revdating.co.uk/:splat"
+  status = 301
+  force  = true

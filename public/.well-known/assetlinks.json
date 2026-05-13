@@ -1,0 +1,40 @@
+/**
+ * .well-known/assetlinks.json
+ *
+ * Required for Trusted Web Activity (TWA) — the bridge between your PWA
+ * and the Google Play Store Android wrapper.
+ *
+ * HOW TO GET YOUR SHA-256 FINGERPRINT:
+ * ─────────────────────────────────────
+ * 1. Generate / use your Android signing keystore:
+ *      keytool -genkeypair -v -keystore revdating.keystore -alias revdating \
+ *              -keyalg RSA -keysize 2048 -validity 10000
+ *
+ * 2. Export the SHA-256:
+ *      keytool -list -v -keystore revdating.keystore -alias revdating | grep SHA256
+ *
+ * 3. If using Google Play App Signing (recommended), get the fingerprint from:
+ *      Play Console → App → Setup → App signing → App signing key certificate → SHA-256
+ *
+ * 4. Replace "REPLACE_WITH_YOUR_SHA256_FINGERPRINT" below with the value
+ *    in the format: "AB:CD:EF:12:34:56:..." (colon-separated uppercase hex)
+ *
+ * 5. Replace "com.revdating.app" with your actual Android package name.
+ *
+ * After filling in:
+ *   - Deploy your app
+ *   - The file must be accessible at: https://yourdomain.com/.well-known/assetlinks.json
+ *   - Verify at: https://developers.google.com/digital-asset-links/tools/generator
+ */
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace":                  "android_app",
+      "package_name":               "com.revdating.app",
+      "sha256_cert_fingerprints": [
+        "REPLACE_WITH_YOUR_SHA256_FINGERPRINT"
+      ]
+    }
+  }
+]
