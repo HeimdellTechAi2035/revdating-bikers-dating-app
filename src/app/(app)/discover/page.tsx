@@ -12,7 +12,7 @@ import type { PremiumEntitlements } from '@/lib/premium';
 export const dynamic = 'force-dynamic';
 
 export default async function DiscoverPage() {
-  // DEV PREVIEW: skip Supabase and render an empty deck so the UI is visible
+  // Explicit DEV_BYPASS_AUTH preview: skip Supabase and render an empty deck.
   if (isDevBypassEnabled()) {
     const devEntitlements: PremiumEntitlements = {
       plan: 'free',

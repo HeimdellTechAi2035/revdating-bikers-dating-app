@@ -16,7 +16,8 @@
     "supabase:gen-types": "supabase gen types typescript --local > src/types/database.types.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "validate:env": "node scripts/validate-env.mjs"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",

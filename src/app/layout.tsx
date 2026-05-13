@@ -1,17 +1,10 @@
 ﻿import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
 import CookieBanner from '@/components/compliance/CookieBanner';
 import AnalyticsProvider from '@/components/analytics/AnalyticsProvider';
 import DisableDevTools from '@/components/security/DisableDevTools';
 import InstallPrompt from '@/components/pwa/InstallPrompt';
 import './globals.css';
-
-const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-inter',
-});
 
 export const viewport: Viewport = {
   themeColor:          '#FF6B00',
@@ -69,7 +62,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en">
       <head>
         {/* Favicon served automatically by src/app/icon.tsx */}
         {/* Apple PWA icons */}
