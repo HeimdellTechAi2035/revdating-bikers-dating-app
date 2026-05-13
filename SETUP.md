@@ -87,7 +87,7 @@ To enable one: click the toggle next to the extension name. All four must show a
 ### 4c. Run all database migrations
 
 This creates every table, index, trigger, RLS policy, and function.
-There are 22 migration files numbered 001–022.
+There are 24 migration files numbered 001–024.
 
 **Option A — Supabase CLI (recommended)**
 
@@ -130,6 +130,8 @@ Run them in this exact order:
 020_engine_revs.sql
 021_ride_ratings.sql
 022_email_notifications.sql
+023_security_fixes.sql
+024_private_buckets.sql
 ```
 
 All files are in the `supabase/migrations/` folder.
@@ -138,44 +140,33 @@ All files are in the `supabase/migrations/` folder.
 > migration, run the migrations from where the error stopped — the earlier ones
 > ran fine.
 
-### 4d. Create storage buckets
+### 4d. Verify storage buckets
 
-Go to **Storage** in your Supabase dashboard and create two buckets:
+The migrations create the app's storage buckets and policies. After running all
+migrations, verify these buckets exist in **Storage**:
 
-**Bucket 1 — `profile-photos`**
-- Click **New bucket**
-- Name: `profile-photos`
-- Public bucket: **ON** (tick the checkbox)
-- File size limit: `10 MB`
-- Allowed MIME types: `image/jpeg, image/png, image/webp`
-- Click **Create bucket**
+| Bucket | Public? | Purpose |
+|---|---:|---|
+| `profile-photos` | **Private** | Profile photos served through signed URLs |
+| `bike-photos` | **Private** | Bike photos served through signed URLs |
+| `verification-docs` | **Private** | Selfie/document verification uploads |
 
-**Bucket 2 — `verifications`**
-- Click **New bucket**
-- Name: `verifications`
-- Public bucket: **OFF** (private — signed URLs only)
-- File size limit: `10 MB`
-- Allowed MIME types: `image/jpeg, image/png, image/webp`
-- Click **Create bucket**
+Important: migration `024_private_buckets.sql` intentionally makes
+`profile-photos` and `bike-photos` private and clears stale permanent public URLs.
+Do **not** turn these buckets public in production. The application generates
+signed URLs at read time through the server/admin client.
 
-**Storage RLS policies**
+If you create buckets manually before running migrations, use:
+- Public bucket: **OFF** for all three buckets
+- File size limit: `5 MB` for `profile-photos` and `bike-photos`
+- File size limit: `10 MB` for `verification-docs`
+- Allowed image MIME types: `image/jpeg`, `image/png`, `image/webp`, `image/heic`
+- Add `application/pdf` only for `verification-docs`
 
-After creating the buckets, go to **Storage → Policies** and add these policies:
-
-For `profile-photos`:
-- **SELECT** (read): Allow public — policy: `true`
-- **INSERT**: Allow authenticated users to upload to their own folder:
-  ```sql
-  (auth.uid()::text = (storage.foldername(name))[1])
-  ```
-- **DELETE**: Same condition as INSERT
-
-For `verifications`:
-- **INSERT**: Authenticated users can upload to their own selfies folder:
-  ```sql
-  (auth.uid()::text = (storage.foldername(name))[2])
-  ```
-- **SELECT**: Service role only (the app uses signed URLs via the admin client)
+Storage object policies are defined in the migrations. If a manual dashboard
+change is required, keep the same model: authenticated users can manage their own
+folder, authenticated users can read photo objects, and verification docs remain
+limited to the owner/admin policy.
 
 ### 4e. Configure Supabase Auth
 
@@ -212,6 +203,35 @@ INTERNAL_WEBHOOK_SECRET=some-very-long-random-string-here
 ```
 
 On Mac/Linux you can generate one with: `openssl rand -hex 32`
+
+### 4h. Netlify production environment variables
+
+In Netlify, set production env vars under **Site configuration → Environment
+variables**. At minimum, production must include:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+NEXT_PUBLIC_APP_URL=https://yourdomain.com
+NEXT_PUBLIC_APP_NAME=REVdating
+INTERNAL_WEBHOOK_SECRET=some-very-long-random-string-here
+```
+
+Keep `SUPABASE_SERVICE_ROLE_KEY` server-only. Never prefix it with
+`NEXT_PUBLIC_`, and never paste it into client-side code.
+
+Optional development/demo flags are disabled by default:
+
+```
+DEV_BYPASS_AUTH=false
+NEXT_PUBLIC_ENABLE_DEMO_LOGIN=false
+```
+
+`DEV_BYPASS_AUTH=true` only works outside production and should not be set for
+Netlify production deploys. If demo reviewer login is enabled,
+`NEXT_PUBLIC_DEMO_LOGIN_PASSWORD` is browser-visible; use only a throwaway demo
+account and keep demo login disabled in normal production.
 
 ---
 
@@ -376,25 +396,22 @@ This powers two things:
 
 ---
 
-## 9. OneSignal — Push Notifications
+## 9. Web Push Notifications
 
-### 9a. Create an app
-
-1. Go to https://onesignal.com and create a new app
-2. Select **Web Push** as the platform
-3. Set your site URL and default icon
-
-### 9b. Get your credentials
-
-Go to **Settings → Keys & IDs**:
+The current app implementation uses browser Web Push with VAPID keys, not
+OneSignal. Generate VAPID keys with a trusted tool or `web-push`, then set:
 
 ```
-NEXT_PUBLIC_ONESIGNAL_APP_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-ONESIGNAL_REST_API_KEY=your-rest-api-key
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=your-public-vapid-key
+VAPID_PRIVATE_KEY=your-private-vapid-key
+VAPID_SUBJECT=mailto:hello@yourdomain.com
 ```
 
-> Without these keys push notifications are silently skipped. The app works fully
-> without them — users just won't receive push alerts.
+> Without `VAPID_PRIVATE_KEY`, push notifications are silently skipped. The app
+> still works, but users will not receive push alerts.
+
+Older `NEXT_PUBLIC_ONESIGNAL_APP_ID` / `ONESIGNAL_REST_API_KEY` values are legacy
+and are not used by the current code path.
 
 ---
 
@@ -431,6 +448,19 @@ npm run dev
 ```
 
 Open http://localhost:3000. You should see the REVdating landing/login page.
+
+### 12a. Validate production runtime environment
+
+`npm run build` can pass without production runtime environment variables because
+Next.js builds pages before a production request context exists. Before any
+production deployment, run:
+
+```bash
+npm run validate:env
+```
+
+This command fails with a non-zero exit code if required runtime variables are
+missing. It only prints variable names, not secret values.
 
 ### Verify the database is connected
 
@@ -491,9 +521,10 @@ NEXT_PUBLIC_GOOGLE_MAPS_KEY       ✓
 SIGHTENGINE_API_USER              ✓
 SIGHTENGINE_API_SECRET            ✓
 
-# Required for push notifications
-NEXT_PUBLIC_ONESIGNAL_APP_ID      ✓
-ONESIGNAL_REST_API_KEY            ✓
+# Required for web push notifications
+NEXT_PUBLIC_VAPID_PUBLIC_KEY      ✓
+VAPID_PRIVATE_KEY                 ✓
+VAPID_SUBJECT                     ✓
 
 # Optional
 NEXT_PUBLIC_SENTRY_DSN            (recommended)
@@ -514,6 +545,11 @@ Before going live:
 - [ ] Restrict your Google Maps API key to your production domain
 - [ ] Set `is_admin = true` on at least one admin account in production
 - [ ] Run `supabase db push` against your production project to apply all migrations
+- [ ] Run `npm run validate:env` in the production deployment environment; do not
+  rely on `npm run build` alone for runtime env validation
+- [ ] Keep `NEXT_PUBLIC_ENABLE_DEMO_LOGIN=false` for normal production; if enabled
+  for review, use only a throwaway demo account because
+  `NEXT_PUBLIC_DEMO_LOGIN_PASSWORD` is browser-visible
 - [ ] Test the full user journey: sign up → onboard → swipe → match → message → premium
 
 ---
