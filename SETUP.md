@@ -647,3 +647,6 @@ npm run supabase:gen-types
 stripe listen --forward-to localhost:3000/api/stripe/webhook
 ```
 
+⚠️ `supabase db reset` is destructive. Use it only against a local development
+database, never against production.
+
