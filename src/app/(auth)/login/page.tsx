@@ -39,16 +39,23 @@ function LoginContent() {
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
+  const demoLoginEnabled = process.env.NEXT_PUBLIC_ENABLE_DEMO_LOGIN === 'true';
+  const demoEmail = process.env.NEXT_PUBLIC_DEMO_LOGIN_EMAIL;
+  const demoPassword = process.env.NEXT_PUBLIC_DEMO_LOGIN_PASSWORD;
+
   async function signInAsDemo() {
-    const DEMO_EMAIL = 'andrewjamessmith1984@gmail.com';
-    const DEMO_PASSWORD = 'Stevo1984@@@!?';
-    setValue('email', DEMO_EMAIL);
-    setValue('password', DEMO_PASSWORD);
+    if (!demoLoginEnabled || !demoEmail || !demoPassword) {
+      toast.error('Demo login is not configured');
+      return;
+    }
+
+    setValue('email', demoEmail);
+    setValue('password', demoPassword);
     setLoading(true);
     try {
       const { data: signInData, error } = await supabase.auth.signInWithPassword({
-        email: DEMO_EMAIL,
-        password: DEMO_PASSWORD,
+        email: demoEmail,
+        password: demoPassword,
       });
       if (error) { toast.error('Demo account unavailable'); return; }
       const userId = signInData.user?.id;
@@ -207,21 +214,24 @@ function LoginContent() {
           <Link href="/privacy" className="underline hover:text-brand-chrome">Privacy Policy</Link>.
         </p>
 
-        {/* Demo access — for Google Play reviewers */}
-        <div className="mt-8 pt-6 border-t border-brand-dark-4">
-          <p className="text-center text-xs text-brand-chrome-dark mb-3">Google Play reviewer?</p>
-          <button
-            type="button"
-            onClick={signInAsDemo}
-            disabled={loading}
-            className="w-full py-3 rounded-xl border border-brand-dark-4 text-brand-chrome text-sm font-medium hover:border-brand-orange/30 hover:text-white transition-colors disabled:opacity-50"
-          >
-            Sign in with demo account
-          </button>
-          <p className="text-center text-xs text-brand-chrome-dark/60 mt-2">
-            andrewjamessmith1984@gmail.com · Stevo1984@@@!?
-          </p>
-        </div>
+        {demoLoginEnabled && (
+          <div className="mt-8 pt-6 border-t border-brand-dark-4">
+            <p className="text-center text-xs text-brand-chrome-dark mb-3">Demo reviewer access</p>
+            <button
+              type="button"
+              onClick={signInAsDemo}
+              disabled={loading || !demoEmail || !demoPassword}
+              className="w-full py-3 rounded-xl border border-brand-dark-4 text-brand-chrome text-sm font-medium hover:border-brand-orange/30 hover:text-white transition-colors disabled:opacity-50"
+            >
+              Sign in with demo account
+            </button>
+            {demoEmail && (
+              <p className="text-center text-xs text-brand-chrome-dark/60 mt-2">
+                Demo account: {demoEmail}
+              </p>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

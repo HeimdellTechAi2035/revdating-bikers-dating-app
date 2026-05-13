@@ -72,7 +72,7 @@ export default function PrivacyPage() {
             <li>Supabase (database and authentication hosting, EU/US)</li>
             <li>Stripe (payment processing)</li>
             <li>Sightengine (image moderation)</li>
-            <li>OneSignal (push notifications)</li>
+            <li>Web Push/VAPID (push notifications)</li>
             <li>Law enforcement or regulators when legally required</li>
           </ul>
         </Section>
