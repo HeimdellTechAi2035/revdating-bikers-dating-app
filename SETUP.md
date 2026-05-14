@@ -364,7 +364,7 @@ Set these variables in your server/deployment environment if you want the helper
 enabled:
 
 ```bash
-OPENAI_API_KEY=sk-...
+OPENAI_API_KEY=your_openai_api_key_here
 OPENAI_PROFILE_HELPER_MODEL=gpt-5.4-nano
 OPENAI_ICEBREAKER_MODEL=gpt-5.4-nano
 OPENAI_SAFETY_MODEL=gpt-5.4-nano
