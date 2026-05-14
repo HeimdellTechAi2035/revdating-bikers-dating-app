@@ -6,7 +6,7 @@ import { isDevBypassEnabled } from '@/lib/dev-bypass';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboard() {
-  // DEV PREVIEW: return zeroed stats so the admin UI is visible without Supabase
+  // Explicit DEV_BYPASS_AUTH preview: return zeroed stats without Supabase.
   if (isDevBypassEnabled()) {
     const stats = [
       { label: 'Total users',           value: 0, color: 'text-white' },

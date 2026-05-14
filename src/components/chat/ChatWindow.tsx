@@ -7,9 +7,11 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import {
   Send, ChevronLeft, ShieldCheck, Flag, Check, CheckCheck, X, MoreVertical,
-  CalendarCheck, Smile, Search, Loader2, MapPin, Calendar,
+  CalendarCheck, Smile, Search, Loader2, MapPin, Calendar, AlertTriangle,
 } from 'lucide-react';
 import BlockReportSheet from '@/components/shared/BlockReportSheet';
+import { AIIcebreakerHelper } from '@/components/chat/AIIcebreakerHelper';
+import { AIRidePlannerHelper } from '@/components/chat/AIRidePlannerHelper';
 import { formatTime } from '@/lib/utils';
 import { analytics } from '@/lib/analytics';
 
@@ -73,6 +75,50 @@ const REPORT_REASONS = [
   { value: 'other',      label: 'Other' },
 ] as const;
 
+type MessageSafetyRiskLevel = 'low' | 'medium' | 'high';
+
+type MessageSafetyCategory =
+  | 'harassment'
+  | 'threat'
+  | 'hate_or_abuse'
+  | 'sexual_pressure'
+  | 'money_request'
+  | 'suspicious_link'
+  | 'scam_like'
+  | 'manipulation'
+  | 'personal_contact_pressure'
+  | 'unsafe_meetup_pressure'
+  | 'self_harm_or_crisis'
+  | 'other';
+
+type MessageSafetyResult = {
+  safe_to_send: boolean;
+  risk_level: MessageSafetyRiskLevel;
+  categories: MessageSafetyCategory[];
+  warning: string | null;
+  suggested_rewrite: string | null;
+};
+
+type MessageSafetyWarning = {
+  content: string;
+  result: MessageSafetyResult;
+};
+
+const MESSAGE_SAFETY_CATEGORY_LABELS: Record<MessageSafetyCategory, string> = {
+  harassment: 'Harassment',
+  threat: 'Threat',
+  hate_or_abuse: 'Hate or abuse',
+  sexual_pressure: 'Sexual pressure',
+  money_request: 'Money request',
+  suspicious_link: 'Suspicious link',
+  scam_like: 'Scam-like',
+  manipulation: 'Manipulation',
+  personal_contact_pressure: 'Personal contact pressure',
+  unsafe_meetup_pressure: 'Unsafe meetup pressure',
+  self_harm_or_crisis: 'Self-harm or crisis',
+  other: 'Other risk',
+};
+
 // ---------------------------------------------------------------------------
 // Content parser — detects GIF messages stored as JSON
 // ---------------------------------------------------------------------------
@@ -81,6 +127,29 @@ type ParsedContent =
   | { type: 'text'; text: string }
   | { type: 'gif'; url: string; title: string }
   | { type: 'ride_invite'; id: string; location: string; scheduled_time: string };
+
+function shouldCheckMessageSafety(content: string): boolean {
+  if (content.startsWith('{"type":"')) return false;
+  return true;
+}
+
+async function checkMessageSafety(message: string): Promise<MessageSafetyResult | null> {
+  try {
+    const res = await fetch('/api/ai/message-safety', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message }),
+    });
+
+    if (!res.ok) return null;
+
+    const data = await res.json() as MessageSafetyResult;
+    if (!['low', 'medium', 'high'].includes(data.risk_level)) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
 
 function parseContent(content: string): ParsedContent {
   if (content.startsWith('{"type":"')) {
@@ -323,6 +392,7 @@ export default function ChatWindow({
   const [selectedId, setSelectedId]           = useState<string | null>(null);
   const [reportingId, setReportingId]         = useState<string | null>(null);
   const [showBlockReport, setShowBlockReport] = useState(false);
+  const [safetyWarning, setSafetyWarning] = useState<MessageSafetyWarning | null>(null);
 
   // Emoji picker
   const [showEmoji, setShowEmoji]     = useState(false);
@@ -415,13 +485,27 @@ export default function ChatWindow({
   // -- Send message ---------------------------------------------------------
 
   const sendMessage = useCallback(
-    async (text?: string) => {
+    async (text?: string, options: { skipSafetyCheck?: boolean } = {}) => {
       const content = (text ?? input).trim();
       if (!content || sending) return;
 
+      setSending(true);
+
+      if (!options.skipSafetyCheck && shouldCheckMessageSafety(content)) {
+        const safety = await checkMessageSafety(content);
+        if (safety && !safety.safe_to_send && safety.risk_level !== 'low') {
+          setInput(content);
+          setShowPrompts(false);
+          setSafetyWarning({ content, result: safety });
+          setSending(false);
+          textareaRef.current?.focus();
+          return;
+        }
+      }
+
       setInput('');
       setShowPrompts(false);
-      setSending(true);
+      setSafetyWarning(null);
 
       const tempId = `temp-${Date.now()}`;
       const optimistic: ChatMessage = {
@@ -470,6 +554,15 @@ export default function ChatWindow({
       e.preventDefault();
       void sendMessage();
     }
+  }
+
+  function useIcebreakerMessage(message: string) {
+    setSafetyWarning(null);
+    setInput(message);
+    setShowPrompts(false);
+    setShowEmoji(false);
+    setShowGif(false);
+    setTimeout(() => textareaRef.current?.focus(), 0);
   }
 
   // -- Emoji select ---------------------------------------------------------
@@ -793,6 +886,93 @@ export default function ChatWindow({
         </div>
       )}
 
+      {/* ── AI icebreakers ─────────────────────────────────────── */}
+      <AIIcebreakerHelper matchId={matchId} onUseMessage={useIcebreakerMessage} />
+
+      {/* ── AI ride date planner ────────────────────────────────── */}
+      <AIRidePlannerHelper matchId={matchId} onUseMessage={useIcebreakerMessage} />
+
+      {/* ── AI safety warning ───────────────────────────────────── */}
+      {safetyWarning && (
+        <div className="shrink-0 px-3 py-3 bg-brand-dark-2 border-t border-brand-dark-4">
+          <div className={`rounded-2xl border p-3 ${
+            safetyWarning.result.risk_level === 'high'
+              ? 'border-red-500/50 bg-red-500/10'
+              : 'border-amber-400/50 bg-amber-400/10'
+          }`}>
+            <div className="flex items-start gap-2">
+              <AlertTriangle
+                size={18}
+                className={safetyWarning.result.risk_level === 'high' ? 'text-red-400 shrink-0 mt-0.5' : 'text-amber-300 shrink-0 mt-0.5'}
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-white">
+                  {safetyWarning.result.risk_level === 'high' ? 'Message blocked for safety' : 'Pause before sending'}
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-brand-chrome">
+                  {safetyWarning.result.warning ?? 'This message may feel unsafe or pressuring. Edit it before sending.'}
+                </p>
+                {safetyWarning.result.categories.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {safetyWarning.result.categories.map((category) => (
+                      <span
+                        key={category}
+                        className="rounded-full bg-black/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-chrome"
+                      >
+                        {MESSAGE_SAFETY_CATEGORY_LABELS[category]}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {safetyWarning.result.suggested_rewrite && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setInput(safetyWarning.result.suggested_rewrite ?? safetyWarning.content);
+                      setSafetyWarning(null);
+                      setTimeout(() => textareaRef.current?.focus(), 0);
+                    }}
+                    className="mt-2 text-left text-xs text-brand-orange hover:text-brand-orange/80"
+                  >
+                    Use suggested rewrite: “{safetyWarning.result.suggested_rewrite}”
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setInput(safetyWarning.content);
+                  setSafetyWarning(null);
+                  setTimeout(() => textareaRef.current?.focus(), 0);
+                }}
+                className="flex-1 rounded-xl border border-brand-dark-4 px-3 py-2 text-xs font-semibold text-white hover:bg-brand-dark-3"
+              >
+                Edit message
+              </button>
+              {safetyWarning.result.risk_level === 'medium' && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const content = safetyWarning.content;
+                    setSafetyWarning(null);
+                    void sendMessage(content, { skipSafetyCheck: true });
+                  }}
+                  disabled={sending}
+                  className="flex-1 rounded-xl bg-brand-orange px-3 py-2 text-xs font-semibold text-white hover:bg-brand-orange/90 disabled:opacity-40"
+                >
+                  Send anyway
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── ICK strip ──────────────────────────────────────────── */}
       <div className="flex items-center px-3 pt-2 pb-0 shrink-0 bg-brand-dark-2 border-t border-brand-dark-4">
         <button
@@ -844,7 +1024,10 @@ export default function ChatWindow({
         <textarea
           ref={textareaRef}
           value={input}
-          onChange={(e) => setInput(e.target.value)}
+          onChange={(e) => {
+            setInput(e.target.value);
+            if (safetyWarning) setSafetyWarning(null);
+          }}
           onFocus={() => {
             if (messages.length === 0) setShowPrompts(true);
             setShowEmoji(false);

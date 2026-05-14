@@ -1,5 +1,6 @@
-const BYPASS_IN_DEV = true;
+import { isProductionRuntime } from '@/lib/runtime-env';
 
 export function isDevBypassEnabled(): boolean {
-  return process.env.NODE_ENV !== 'production' && BYPASS_IN_DEV;
+  if (isProductionRuntime()) return false;
+  return process.env.DEV_BYPASS_AUTH === 'true';
 }

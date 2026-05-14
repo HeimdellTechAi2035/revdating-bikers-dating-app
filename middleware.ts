@@ -1,6 +1,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { isDevBypassEnabled } from '@/lib/dev-bypass';
+import { validateProductionEnv } from '@/lib/env';
 
 // Routes that do NOT require authentication
 const PUBLIC_ROUTES = new Set([
@@ -14,18 +15,25 @@ const PUBLIC_ROUTES = new Set([
   '/privacy',
   '/terms',
   '/cookies',
+  '/community-guidelines',
+  '/safety-policy',
+  '/offline',
+  '/account-deleted',
+  '/admin/login',
+  '/api/email/unsubscribe',
 ]);
 const PUBLIC_PREFIXES = ['/auth/', '/api/auth/'];
 const ADMIN_PREFIXES = ['/admin', '/api/admin'];
 
 export async function middleware(request: NextRequest) {
-  // ── DEV PREVIEW BYPASS ──────────────────────────────────────────────────────
-  // When DEV_BYPASS_AUTH=true all auth/admin checks are skipped so the UI can
-  // be viewed without a real Supabase project. NEVER enable this in production.
+  // ── EXPLICIT DEV PREVIEW BYPASS ─────────────────────────────────────────────
+  // Only enabled when DEV_BYPASS_AUTH=true and never enabled in production.
   if (isDevBypassEnabled()) {
     return NextResponse.next({ request });
   }
   // ────────────────────────────────────────────────────────────────────────────
+
+  validateProductionEnv();
 
   let supabaseResponse = NextResponse.next({ request });
 
@@ -101,8 +109,20 @@ export async function middleware(request: NextRequest) {
     .eq('id', user.id)
     .single();
 
+  // Authenticated users with no profile should complete onboarding before app pages.
+  // API route handlers remain responsible for their own authorization/error handling.
+  if (!profile) {
+    if (isApiRoute) {
+      return supabaseResponse;
+    }
+    if (!isOnboarding) {
+      return NextResponse.redirect(new URL('/onboarding', request.url));
+    }
+    return supabaseResponse;
+  }
+
   // Banned users cannot access any application content
-  if (profile?.is_banned) {
+  if (profile.is_banned) {
     if (isApiRoute) {
       return NextResponse.json(
         { error: 'Your account has been suspended.' },
@@ -121,7 +141,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Onboarding not complete — force to onboarding
-  if (profile && !profile.onboarding_complete && !isOnboarding) {
+  if (!profile.onboarding_complete && !isOnboarding) {
     return NextResponse.redirect(new URL('/onboarding', request.url));
   }
 
