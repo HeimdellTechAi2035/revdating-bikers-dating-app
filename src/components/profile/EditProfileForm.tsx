@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
+import { AIProfileHelper } from '@/components/profile/AIProfileHelper';
 import type { ProfileRow, BikeRow, InterestedInType, DatingIntentType, RidingStyleType, ClubTypeType } from '@/types/database.types';
 
 // ── Schema ────────────────────────────────────────────────────────────────────
@@ -143,6 +144,9 @@ export function EditProfileForm({ profile, bike }: EditProfileFormProps) {
             maxLength={500}
             placeholder="Tell other riders about yourself..."
             className="w-full bg-brand-dark-4 border border-brand-dark-4 rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:border-brand-orange/50"
+          />
+          <AIProfileHelper
+            onUseBio={(bio) => setValue('bio', bio, { shouldDirty: true, shouldValidate: true })}
           />
           {errors.bio && <p className="text-red-400 text-xs mt-1">{errors.bio.message}</p>}
         </div>

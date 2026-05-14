@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
+import { AIReportModerationSummary } from '@/components/admin/AIReportModerationSummary';
 
 type ReportStatus = 'pending' | 'reviewed' | 'actioned' | 'dismissed';
 
@@ -206,6 +207,8 @@ export default function AdminReportsPage() {
                   )}
                 </div>
               </div>
+
+              <AIReportModerationSummary reportId={r.id} />
 
               {/* Action panel — shown for pending and reviewed */}
               {(r.status === 'pending' || r.status === 'reviewed') && (

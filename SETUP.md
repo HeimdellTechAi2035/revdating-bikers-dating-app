@@ -344,9 +344,77 @@ For testing, use `RESEND_FROM_EMAIL=onboarding@resend.dev`.
 
 ---
 
-## 7. Google Maps — Ride Date Planning
+## 7. OpenAI — AI Helpers (optional)
 
-### 7a. Create a project and enable APIs
+AI Profile Helper v1 lets a logged-in user generate profile bio/headline ideas
+from their own profile and primary bike data. AI Icebreaker v1 lets a logged-in
+user generate opening-message suggestions for an active match from safe public
+profile and bike details. AI Ride Date Planner v1 lets a matched user generate
+safe, biker-friendly ride-date ideas from general public profile, city/country,
+public bike, and lightweight preference context. AI Admin Moderation Assistant
+v1 lets authorised admins generate recommendation-only report summaries from
+limited report and public/safety context. AI Safety / Red-Flag Detection v1
+checks only the message text immediately before a chat message is sent.
+These AI helpers do **not** use private messages, full chat history, swipes,
+reports unrelated to the selected moderation review, photos beyond the selected
+report attachment, verification documents, emergency contacts, exact GPS
+coordinates, exact addresses, payment details, or other private user data.
+
+Set these variables in your server/deployment environment if you want the helper
+enabled:
+
+```bash
+OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_PROFILE_HELPER_MODEL=gpt-5.4-nano
+OPENAI_ICEBREAKER_MODEL=gpt-5.4-nano
+OPENAI_SAFETY_MODEL=gpt-5.4-nano
+OPENAI_RIDE_PLANNER_MODEL=gpt-5.4-nano
+OPENAI_ADMIN_MODERATION_MODEL=gpt-5.4-nano
+```
+
+Security notes:
+
+- Never prefix OpenAI keys with `NEXT_PUBLIC_`; do not create or configure
+  `NEXT_PUBLIC_OPENAI_API_KEY`.
+- OpenAI keys must only be used server-side.
+- If `OPENAI_API_KEY` is missing, `/api/ai/profile-helper`,
+  `/api/ai/icebreaker`, `/api/ai/ride-planner`, and
+  `/api/admin/ai/moderation-summary` return `503`; the rest of the app still
+  works.
+- If AI safety is unavailable, rate-limited, or cannot validate the model
+  output, normal messaging continues without blocking the user.
+- The default example model is `gpt-5.4-nano` because profile copywriting is a
+  simple text task. If your OpenAI API account does not support that model, the
+  helper fails gracefully and shows a friendly error; change
+  `OPENAI_PROFILE_HELPER_MODEL`, `OPENAI_ICEBREAKER_MODEL`,
+  `OPENAI_SAFETY_MODEL`, `OPENAI_RIDE_PLANNER_MODEL`, or
+  `OPENAI_ADMIN_MODERATION_MODEL` to another supported low-cost text model and
+  redeploy.
+- The AI helpers use the existing in-memory app rate limiter only; no Supabase
+  AI tracking tables or migrations are used in v1.
+- AI safety v1 does not add Supabase AI tracking tables, create migrations,
+  auto-ban users, auto-report users, create admin actions, or send messages on
+  the user's behalf.
+- AI ride planner v1 does not use exact GPS coordinates, exact addresses, or
+  location tracking. It does not save ride plans, create ride-date records,
+  create calendar events, or send messages automatically.
+- AI admin moderation v1 is recommendation-only and requires human admin review.
+  It does not auto-ban, auto-warn, auto-delete, update report status, create
+  admin actions, or save AI moderation summaries to Supabase.
+- Generated profile text is never saved automatically. The user must copy or
+  choose a suggestion and then save their profile manually.
+- Generated icebreakers and ride-date message drafts are never sent
+  automatically. The user must choose or edit a suggestion and then press the
+  existing Send button manually.
+- AI ride-date ideas are suggestions only and are not saved in Supabase in v1.
+- AI safety warnings are shown before sending only. Medium-risk warnings allow
+  the user to edit or choose Send anyway; high-risk warnings only allow editing.
+
+---
+
+## 8. Google Maps — Ride Date Planning
+
+### 8a. Create a project and enable APIs
 
 1. Go to https://console.cloud.google.com
 2. Create a new project (or use an existing one)
@@ -356,7 +424,7 @@ For testing, use `RESEND_FROM_EMAIL=onboarding@resend.dev`.
    - **Places API**
    - **Maps Static API**
 
-### 7b. Create an API key
+### 8b. Create an API key
 
 1. Go to **APIs & Services → Credentials → Create credentials → API key**
 2. Copy the key and add to `.env.local`:
@@ -365,20 +433,20 @@ For testing, use `RESEND_FROM_EMAIL=onboarding@resend.dev`.
 NEXT_PUBLIC_GOOGLE_MAPS_KEY=AIza...
 ```
 
-### 7c. Restrict the key (recommended)
+### 8c. Restrict the key (recommended)
 
 - Under **Application restrictions**, select **HTTP referrers** and add your domain
 - Under **API restrictions**, select **Restrict key** and select the three APIs above
 
 ---
 
-## 8. Sightengine — Photo Moderation & Selfie Face Detection
+## 9. Sightengine — Photo Moderation & Selfie Face Detection
 
-### 8a. Create an account
+### 9a. Create an account
 
 Sign up at https://sightengine.com. The free tier allows 2,000 operations/month.
 
-### 8b. Get your API credentials
+### 9b. Get your API credentials
 
 Go to your dashboard and copy **API user** and **API secret**:
 
@@ -396,7 +464,7 @@ This powers two things:
 
 ---
 
-## 9. Web Push Notifications
+## 10. Web Push Notifications
 
 The current app implementation uses browser Web Push with VAPID keys, not
 OneSignal. Generate VAPID keys with a trusted tool or `web-push`, then set:
@@ -415,7 +483,7 @@ and are not used by the current code path.
 
 ---
 
-## 10. Sentry — Error Tracking (optional but recommended)
+## 11. Sentry — Error Tracking (optional but recommended)
 
 1. Sign up at https://sentry.io and create a **Next.js** project
 2. Get your DSN from **Settings → Projects → [your project] → Client Keys**
@@ -429,7 +497,7 @@ SENTRY_PROJECT=REVdating
 
 ---
 
-## 11. PostHog — Product Analytics (optional)
+## 12. PostHog — Product Analytics (optional)
 
 1. Sign up at https://posthog.com and create a project
 2. Copy the **Project API key** from your project settings
@@ -441,7 +509,7 @@ NEXT_PUBLIC_POSTHOG_HOST=https://app.posthog.com
 
 ---
 
-## 12. Run the App
+## 13. Run the App
 
 ```bash
 npm run dev
@@ -449,7 +517,7 @@ npm run dev
 
 Open http://localhost:3000. You should see the REVdating landing/login page.
 
-### 12a. Validate production runtime environment
+### 13a. Validate production runtime environment
 
 `npm run build` can pass without production runtime environment variables because
 Next.js builds pages before a production request context exists. Before any
@@ -471,7 +539,7 @@ missing. It only prints variable names, not secret values.
 
 ---
 
-## 13. Set Up Your First Admin Account
+## 14. Set Up Your First Admin Account
 
 The admin dashboard is at `/admin`. Access requires the `is_admin = true` flag
 on your profile row.
@@ -489,7 +557,7 @@ You can now visit http://localhost:3000/admin to access the full admin panel:
 
 ---
 
-## 14. Complete `.env.local` Checklist
+## 15. Complete `.env.local` Checklist
 
 Before running in production confirm all of these are filled in:
 
@@ -533,7 +601,7 @@ NEXT_PUBLIC_POSTHOG_KEY           (recommended)
 
 ---
 
-## 15. Production Deployment Checklist
+## 16. Production Deployment Checklist
 
 Before going live:
 
@@ -578,4 +646,7 @@ npm run supabase:gen-types
 # Forward Stripe webhooks to localhost
 stripe listen --forward-to localhost:3000/api/stripe/webhook
 ```
+
+⚠️ `supabase db reset` is destructive. Use it only against a local development
+database, never against production.
 
