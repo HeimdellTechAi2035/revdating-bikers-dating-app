@@ -1,18 +1,32 @@
-﻿import Link from 'next/link';
+import Link from 'next/link';
 
 export const metadata = {
   title: 'Privacy Policy — REVdating',
   description: 'How REVdating collects, uses, and protects your personal data.',
+  alternates: { canonical: 'https://revdating.co.uk/privacy' },
 };
 
 const LAST_UPDATED = '29 April 2026';
-const CONTROLLER = 'REVdating Ltd';
+const CONTROLLER = 'Heimdell Tech Ai Ltd, trading as REVdating';
 const CONTACT_EMAIL = 'privacy@REVdating.app';
 const DPO_EMAIL = 'dpo@REVdating.app';
 
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-brand-dark text-white py-12 px-4">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'REVdating', item: 'https://revdating.co.uk/' },
+              { '@type': 'ListItem', position: 2, name: 'Privacy Policy', item: 'https://revdating.co.uk/privacy' },
+            ],
+          }),
+        }}
+      />
       <div className="max-w-3xl mx-auto space-y-8">
         <div>
           <Link href="/" className="text-brand-orange hover:underline text-sm">← Back to REVdating</Link>

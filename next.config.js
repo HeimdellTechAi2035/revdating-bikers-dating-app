@@ -67,7 +67,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https: blob:",
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://api.sightengine.com https://app.posthog.com https://*.sentry.io https://resend.com",
-              "frame-src 'none' https://js.stripe.com",
+              "frame-src https://js.stripe.com",
               "font-src 'self' data:",
               "worker-src 'self' blob:",
               "media-src 'self' blob: https://*.supabase.co",

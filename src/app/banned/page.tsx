@@ -1,4 +1,10 @@
-﻿import Link from 'next/link';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+
+export const metadata: Metadata = {
+  title: 'Account Suspended — REVdating',
+  robots: { index: false, follow: false },
+};
 
 export default function BannedPage() {
   return (
@@ -9,7 +15,7 @@ export default function BannedPage() {
         <p className="text-brand-chrome">
           Your REVdating account has been suspended due to a violation of our{' '}
           <Link href="/terms" className="text-brand-orange hover:underline">Terms of Service</Link> or{' '}
-          <Link href="/safety" className="text-brand-orange hover:underline">Community Guidelines</Link>.
+          <Link href="/community-guidelines" className="text-brand-orange hover:underline">Community Guidelines</Link>.
         </p>
         <p className="text-brand-chrome text-sm">
           If you believe this was an error, please contact our support team at{' '}

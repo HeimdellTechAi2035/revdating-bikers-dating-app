@@ -1,4 +1,4 @@
-﻿/**
+/**
  * lib/photos/index.ts
  *
  * Server-side photo upload and moderation logic for REVdating.
@@ -19,7 +19,7 @@
  */
 
 import { createAdminClient } from '@/lib/supabase/admin';
-import { moderateStorageImage } from '@/lib/moderation';
+import { moderateStorageImage } from '@/lib/image-moderation';
 import { signPhotoUrl } from '@/lib/photos/sign';
 import type { ModerationStatus, Database } from '@/types/database.types';
 

@@ -1,8 +1,9 @@
-﻿import Link from 'next/link';
+import Link from 'next/link';
 
 export const metadata = {
   title: 'Community Guidelines — REVdating',
   description: 'The rules and standards that keep REVdating a safe, welcoming community for bikers.',
+  alternates: { canonical: 'https://revdating.co.uk/community-guidelines' },
 };
 
 const LAST_UPDATED = '27 April 2026';
@@ -10,6 +11,19 @@ const LAST_UPDATED = '27 April 2026';
 export default function CommunityGuidelinesPage() {
   return (
     <div className="min-h-screen bg-brand-dark text-white py-12 px-4">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'REVdating', item: 'https://revdating.co.uk/' },
+              { '@type': 'ListItem', position: 2, name: 'Community Guidelines', item: 'https://revdating.co.uk/community-guidelines' },
+            ],
+          }),
+        }}
+      />
       <div className="max-w-3xl mx-auto space-y-8">
         <div>
           <Link href="/" className="text-brand-orange hover:underline text-sm">← Back to REVdating</Link>

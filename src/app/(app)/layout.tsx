@@ -1,8 +1,13 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { isDevBypassEnabled } from '@/lib/dev-bypass';
 import OnlineHeartbeat from '@/components/shared/OnlineHeartbeat';
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   // Explicit DEV_BYPASS_AUTH preview: skip app auth checks outside production.

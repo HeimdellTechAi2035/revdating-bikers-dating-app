@@ -1,8 +1,9 @@
-﻿import Link from 'next/link';
+import Link from 'next/link';
 
 export const metadata = {
   title: 'Terms of Service — REVdating',
   description: 'Terms and conditions for using the REVdating dating app.',
+  alternates: { canonical: 'https://revdating.co.uk/terms' },
 };
 
 const LAST_UPDATED = '29 April 2026';
@@ -10,6 +11,19 @@ const LAST_UPDATED = '29 April 2026';
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-brand-dark text-white py-12 px-4">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'REVdating', item: 'https://revdating.co.uk/' },
+              { '@type': 'ListItem', position: 2, name: 'Terms of Service', item: 'https://revdating.co.uk/terms' },
+            ],
+          }),
+        }}
+      />
       <div className="max-w-3xl mx-auto space-y-8">
         <div>
           <Link href="/" className="text-brand-orange hover:underline text-sm">← Back to REVdating</Link>

@@ -1,8 +1,9 @@
-﻿import Link from 'next/link';
+import Link from 'next/link';
 
 export const metadata = {
   title: 'Safety Policy — REVdating',
   description: 'How REVdating protects its users and handles harmful content.',
+  alternates: { canonical: 'https://revdating.co.uk/safety-policy' },
 };
 
 const LAST_UPDATED = '27 April 2026';
@@ -10,6 +11,19 @@ const LAST_UPDATED = '27 April 2026';
 export default function SafetyPolicyPage() {
   return (
     <div className="min-h-screen bg-brand-dark text-white py-12 px-4">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'REVdating', item: 'https://revdating.co.uk/' },
+              { '@type': 'ListItem', position: 2, name: 'Safety Policy', item: 'https://revdating.co.uk/safety-policy' },
+            ],
+          }),
+        }}
+      />
       <div className="max-w-3xl mx-auto space-y-8">
         <div>
           <Link href="/" className="text-brand-orange hover:underline text-sm">← Back to REVdating</Link>
