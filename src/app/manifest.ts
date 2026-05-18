@@ -1,11 +1,11 @@
-﻿import type { MetadataRoute } from 'next';
+import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name:             'REVdating — Dating for Bikers',
     short_name:       'REVdating',
     description:      'Find your perfect riding companion. The dating app built exclusively for the biker community.',
-    start_url:        '/discover',
+    start_url:        '/',
     scope:            '/',
     display:          'standalone',
     orientation:      'portrait',

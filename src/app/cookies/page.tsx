@@ -1,12 +1,26 @@
-﻿import Link from 'next/link';
+import Link from 'next/link';
 
 export const metadata = {
   title: 'Cookie Policy — REVdating',
+  alternates: { canonical: 'https://revdating.co.uk/cookies' },
 };
 
 export default function CookiesPage() {
   return (
     <div className="min-h-screen bg-brand-dark text-white py-12 px-4">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'REVdating', item: 'https://revdating.co.uk/' },
+              { '@type': 'ListItem', position: 2, name: 'Cookie Policy', item: 'https://revdating.co.uk/cookies' },
+            ],
+          }),
+        }}
+      />
       <div className="max-w-3xl mx-auto space-y-8">
         <div>
           <Link href="/" className="text-brand-orange hover:underline text-sm">← Back to REVdating</Link>

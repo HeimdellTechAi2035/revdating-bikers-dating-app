@@ -1,8 +1,9 @@
-﻿import Link from 'next/link';
+import Link from 'next/link';
 import { CheckCircle, Bike } from 'lucide-react';
 
 export const metadata = {
   title: 'Account Deleted — REVdating',
+  robots: { index: false, follow: false },
 };
 
 export default function AccountDeletedPage() {

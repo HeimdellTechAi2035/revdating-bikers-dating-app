@@ -1,7 +1,7 @@
 import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
-export const alt = 'REVdating — The Dating App for Bikers';
+export const alt = 'REVdating — The UK Biker Dating App';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -108,7 +108,7 @@ export default function Image() {
                 textTransform: 'uppercase',
               }}
             >
-              🔥  The #1 Dating App for Bikers
+              🏍️  Biker Dating · Built for UK Riders
             </span>
           </div>
 
@@ -146,22 +146,9 @@ export default function Image() {
             </span>
           </div>
 
-          {/* Stats */}
-          <div style={{ display: 'flex', gap: 0, marginTop: 12 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingRight: 40 }}>
-              <span style={{ fontSize: 42, fontWeight: 900, color: '#ef4444', lineHeight: 1 }}>50K+</span>
-              <span style={{ fontSize: 13, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Bikers dating</span>
-            </div>
-            <div style={{ display: 'flex', width: 1, background: '#27272a', marginRight: 40, alignSelf: 'stretch' }} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingRight: 40 }}>
-              <span style={{ fontSize: 42, fontWeight: 900, color: '#60a5fa', lineHeight: 1 }}>18K+</span>
-              <span style={{ fontSize: 13, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Couples matched</span>
-            </div>
-            <div style={{ display: 'flex', width: 1, background: '#27272a', marginRight: 40, alignSelf: 'stretch' }} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <span style={{ fontSize: 42, fontWeight: 900, color: '#ffffff', lineHeight: 1 }}>4.8 ★</span>
-              <span style={{ fontSize: 13, color: '#52525b', textTransform: 'uppercase', letterSpacing: '0.1em' }}>App rating</span>
-            </div>
+          {/* URL strip */}
+          <div style={{ display: 'flex', marginTop: 20 }}>
+            <span style={{ fontSize: 18, color: '#52525b', letterSpacing: '0.05em' }}>revdating.co.uk</span>
           </div>
         </div>
 

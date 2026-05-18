@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { isDevBypassEnabled } from '@/lib/dev-bypass';
+import { validateProductionEnv } from '@/lib/env';
 
 // ── Route classification ──────────────────────────────────────────────────────
 
@@ -19,7 +21,14 @@ const PUBLIC_PATHS = new Set([
   '/account-deleted',
   '/banned',
   '/admin/login',
+  '/api/email/unsubscribe',
+  '/contact',
+  '/install',
+  '/delete-account',
 ]);
+
+const PUBLIC_PREFIXES = ['/auth/', '/api/auth/', '/api/stripe/webhook'];
+const ADMIN_PREFIXES  = ['/admin', '/api/admin'];
 
 // ── Rate limiting (auth pages only) ──────────────────────────────────────────
 
@@ -63,6 +72,14 @@ const DANGEROUS_QUERY = /union[\s+]select|drop[\s+]table|exec[\s(]|<script|javas
 // ── Middleware ────────────────────────────────────────────────────────────────
 
 export async function middleware(request: NextRequest) {
+  // ── Dev preview bypass ──────────────────────────────────────────────────────
+  // Only active when DEV_BYPASS_AUTH=true — never enabled in production.
+  if (isDevBypassEnabled()) {
+    return NextResponse.next({ request });
+  }
+
+  validateProductionEnv();
+
   const { pathname } = request.nextUrl;
 
   // 1. Block malicious patterns immediately — no cost
@@ -70,17 +87,20 @@ export async function middleware(request: NextRequest) {
     return new NextResponse(null, { status: 400 });
   }
 
-  // 2. Static assets — pass through instantly, no Supabase call
+  // 2. Static assets and public image routes — pass through instantly, no Supabase call
   const isStatic =
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/.well-known/') ||
+    pathname.startsWith('/icons/') ||
+    pathname === '/opengraph-image' ||
+    pathname === '/icon' ||
     /\.(ico|png|jpg|jpeg|svg|webp|webmanifest|js|css|woff2?|ttf|otf|map)$/.test(pathname);
 
   if (isStatic) {
     return NextResponse.next({ request });
   }
 
-  // 3. Rate-limit auth page hits
+  // 3. Rate-limit auth page hits before any DB work
   const isAuthPage =
     pathname === '/login' ||
     pathname === '/register' ||
@@ -101,21 +121,23 @@ export async function middleware(request: NextRequest) {
 
   const isPublicRoute =
     PUBLIC_PATHS.has(pathname) ||
-    pathname.startsWith('/auth/') ||
-    pathname.startsWith('/api/stripe/webhook');
+    PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
 
-  // 4. Public routes — NO Supabase network call, just headers
-  //    Individual pages do their own getUser() check as needed.
-  if (isPublicRoute) {
+  const isApiRoute    = pathname.startsWith('/api/');
+  const isAdminRoute  = ADMIN_PREFIXES.some((p) => pathname.startsWith(p));
+  const isOnboarding  = pathname === '/onboarding';
+
+  // 4. Public routes — no Supabase call, just apply security headers.
+  //    Auth pages (login/register) are in PUBLIC_PATHS so authenticated users
+  //    hitting them are handled below after the getUser() call.
+  if (isPublicRoute && !isAuthPage) {
     const response = NextResponse.next({ request });
     addSecurityHeaders(response);
     return response;
   }
 
-  // 5. Protected routes — use getSession() which reads from the cookie
-  //    (no network round-trip unless the token needs refreshing).
-  //    Full getUser() server validation happens inside each protected page.
-  let response = NextResponse.next({ request });
+  // 5. All other routes — verify the session server-side with getUser()
+  let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -127,30 +149,108 @@ export async function middleware(request: NextRequest) {
         },
         setAll(cookiesToSet: Array<{ name: string; value: string; options: CookieOptions }>) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({ request });
+          supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options as Parameters<typeof response.cookies.set>[2]),
+            supabaseResponse.cookies.set(
+              name,
+              value,
+              options as Parameters<typeof supabaseResponse.cookies.set>[2],
+            ),
           );
         },
       },
     },
   );
 
-  // getSession() reads the JWT from the cookie — no network call for valid non-expired tokens.
-  // It will make one call if the token needs a refresh (every ~1 hour per user).
-  const { data: { session } } = await supabase.auth.getSession();
+  // getUser() validates the JWT with the Supabase Auth server — prevents
+  // spoofed cookies from bypassing auth checks.
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!session) {
+  // ── Unauthenticated ───────────────────────────────────────────────────────
+  if (!user) {
+    // Auth pages (login/register/forgot-password) are fine for unauthenticated users.
+    if (isAuthPage || isPublicRoute) {
+      const response = NextResponse.next({ request });
+      addSecurityHeaders(response);
+      return response;
+    }
+    if (isApiRoute) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.searchParams.set('redirect', pathname);
     return NextResponse.redirect(url);
   }
 
-  addSecurityHeaders(response);
-  return response;
+  // ── Authenticated user on auth pages → redirect to app ───────────────────
+  if (isAuthPage) {
+    return NextResponse.redirect(new URL('/discover', request.url));
+  }
+
+  // ── Profile checks: banned status + onboarding ───────────────────────────
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('onboarding_complete, is_banned')
+    .eq('id', user.id)
+    .single();
+
+  // No profile yet — must complete onboarding first.
+  if (!profile) {
+    if (isApiRoute) {
+      addSecurityHeaders(supabaseResponse);
+      return supabaseResponse;
+    }
+    if (!isOnboarding) {
+      return NextResponse.redirect(new URL('/onboarding', request.url));
+    }
+    addSecurityHeaders(supabaseResponse);
+    return supabaseResponse;
+  }
+
+  // Banned users are blocked from all protected content.
+  if (profile.is_banned) {
+    if (isApiRoute) {
+      return NextResponse.json(
+        { error: 'Your account has been suspended.' },
+        { status: 403 },
+      );
+    }
+    if (pathname !== '/banned') {
+      return NextResponse.redirect(new URL('/banned', request.url));
+    }
+    addSecurityHeaders(supabaseResponse);
+    return supabaseResponse;
+  }
+
+  // API routes (non-banned) — fine to proceed; each handler does its own authz.
+  if (isApiRoute) {
+    addSecurityHeaders(supabaseResponse);
+    return supabaseResponse;
+  }
+
+  // Onboarding incomplete — force the user to finish before accessing the app.
+  if (!profile.onboarding_complete && !isOnboarding) {
+    return NextResponse.redirect(new URL('/onboarding', request.url));
+  }
+
+  // ── Admin route protection ───────────────────────────────────────────────
+  if (isAdminRoute) {
+    const { data: adminUser } = await supabase
+      .from('admin_users')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (!adminUser) {
+      return NextResponse.redirect(new URL('/discover', request.url));
+    }
+  }
+
+  addSecurityHeaders(supabaseResponse);
+  return supabaseResponse;
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|sw\\.js|workbox-|manifest).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon\.ico|sitemap\.xml|robots\.txt|BingSiteAuth\.xml|google[a-z0-9]+\.html|sw\.js|workbox-|manifest).*)'],
 };
