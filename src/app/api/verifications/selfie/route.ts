@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { checkSelfie } from '@/lib/moderation';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -8,7 +7,6 @@ const MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 
 export async function POST(request: NextRequest) {
   const supabase = createClient();
-  const admin = createAdminClient();
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -52,25 +50,37 @@ export async function POST(request: NextRequest) {
 
   // Upload to private storage bucket
   const ext = selfie.type === 'image/png' ? 'png' : selfie.type === 'image/webp' ? 'webp' : 'jpg';
-  const storagePath = `selfies/${user.id}/${Date.now()}.${ext}`;
+  const safeBaseName = (selfie.name || 'selfie')
+    .replace(/\.[^.]+$/, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9-_]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 40) || 'selfie';
+  const storagePath = `${user.id}/${Date.now()}-${safeBaseName}.${ext}`;
   const bytes = await selfie.arrayBuffer();
 
-  const { error: uploadError } = await admin.storage
-    .from('verifications')
+  const { error: uploadError } = await supabase.storage
+    .from('verification-docs')
     .upload(storagePath, bytes, {
       contentType: selfie.type,
-      upsert: true,
+      upsert: false,
     });
 
   if (uploadError) {
-    console.error('Selfie upload error:', uploadError);
-    return NextResponse.json({ error: 'Failed to upload selfie' }, { status: 500 });
+    console.error('[POST /api/verifications/selfie] storage upload failed', {
+      userId: user.id,
+      bucket: 'verification-docs',
+      path: storagePath,
+      error: uploadError,
+    });
+    return NextResponse.json({ error: 'We could not upload your selfie right now. Please try again.' }, { status: 500 });
   }
 
   // ── Face detection check (advisory only — never blocks submission) ──────────
   let autoCheckNote: string | null = null;
-  const { data: signedData } = await admin.storage
-    .from('verifications')
+  const { data: signedData } = await supabase.storage
+    .from('verification-docs')
     .createSignedUrl(storagePath, 90);
 
   if (signedData?.signedUrl) {
@@ -82,7 +92,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Create verification record (replaces any previous rejected one)
-  const { error: upsertError } = await admin
+  const { error: upsertError } = await supabase
     .from('verifications')
     .upsert(
       {
@@ -97,8 +107,12 @@ export async function POST(request: NextRequest) {
     );
 
   if (upsertError) {
-    console.error('Verification upsert error:', upsertError);
-    return NextResponse.json({ error: 'Failed to submit verification' }, { status: 500 });
+    console.error('[POST /api/verifications/selfie] verification upsert failed', {
+      userId: user.id,
+      path: storagePath,
+      error: upsertError,
+    });
+    return NextResponse.json({ error: 'Your selfie was uploaded but we could not submit verification. Please try again.' }, { status: 500 });
   }
 
   return NextResponse.json({ success: true }, { status: 201 });

@@ -21,6 +21,34 @@ const PUBLIC_PATHS = new Set([
   '/admin/login',
 ]);
 
+
+const PUBLIC_FILE_PATHS = new Set([
+  '/BingSiteAuth.xml',
+  '/robots.txt',
+  '/sitemap.xml',
+  '/favicon.ico',
+  '/manifest.webmanifest',
+  '/opengraph-image',
+  '/icon',
+  '/sw.js',
+  '/sw.js.map',
+  '/worker-b18b4a7472bb515f.js',
+]);
+
+const PUBLIC_FILE_PREFIXES = [
+  '/icons/',
+  '/.well-known/',
+  '/_next/static/',
+  '/_next/image/',
+];
+
+function isPublicFile(pathname: string): boolean {
+  return (
+    PUBLIC_FILE_PATHS.has(pathname) ||
+    PUBLIC_FILE_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+  );
+}
+
 // ── Rate limiting (auth pages only) ──────────────────────────────────────────
 
 const authRateMap = new Map<string, { count: number; until: number }>();
@@ -70,11 +98,13 @@ export async function middleware(request: NextRequest) {
     return new NextResponse(null, { status: 400 });
   }
 
-  // 2. Static assets — pass through instantly, no Supabase call
-  const isStatic =
-    pathname.startsWith('/_next/') ||
-    pathname.startsWith('/.well-known/') ||
-    /\.(ico|png|jpg|jpeg|svg|webp|webmanifest|js|css|woff2?|ttf|otf|map)$/.test(pathname);
+  // 2. Public SEO/verification files and static assets — pass through
+  // instantly, with no Supabase call and no login redirect.
+  if (isPublicFile(pathname)) {
+    return NextResponse.next({ request });
+  }
+
+  const isStatic = /\.(ico|png|jpg|jpeg|svg|webp|webmanifest|js|css|woff2?|ttf|otf|map)$/.test(pathname);
 
   if (isStatic) {
     return NextResponse.next({ request });
@@ -152,5 +182,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|sw\\.js|workbox-|manifest).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|sw\\.js|sw\\.js\\.map|workbox-|manifest\\.webmanifest).*)',
+  ],
 };

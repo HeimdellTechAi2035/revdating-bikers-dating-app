@@ -1,11 +1,16 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { isDevBypassEnabled } from '@/lib/dev-bypass';
 import OnlineHeartbeat from '@/components/shared/OnlineHeartbeat';
 
+export const metadata: Metadata = {
+  robots: { index: false, follow: false, noarchive: true },
+};
+
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  // DEV PREVIEW: skip all auth so the dashboard UI is visible without Supabase
+  // Explicit DEV_BYPASS_AUTH preview: skip app auth checks outside production.
   if (!isDevBypassEnabled()) {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();

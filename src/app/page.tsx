@@ -1,5 +1,8 @@
-﻿import Link from 'next/link';
+import type { Metadata } from 'next';
+import Link from 'next/link';
 import Image from 'next/image';
+import JsonLd from '@/components/seo/JsonLd';
+import { absoluteUrl, siteConfig } from '@/lib/seo/site';
 import {
   Bike,
   Flame,
@@ -87,10 +90,86 @@ const FEATURES = [
 ];
 
 const STATS = [
-  { value: '50K+', label: 'Bikers dating',      color: 'text-red-500' },
-  { value: '120+', label: 'Cities covered',      color: 'text-yellow-400' },
-  { value: '18K+', label: 'Couples matched',     color: 'text-blue-400' },
-  { value: '4.8★', label: 'App store rating',   color: 'text-white' },
+  { value: 'UK', label: 'Rider-focused dating', color: 'text-red-500' },
+  { value: '18+', label: 'Adults only',          color: 'text-yellow-400' },
+  { value: 'Safety', label: 'Report & block tools', color: 'text-blue-400' },
+  { value: 'AI', label: 'Helpful, never a user', color: 'text-white' },
+];
+
+
+const homeDescription = siteConfig.defaultDescription;
+
+export const metadata: Metadata = {
+  title: { absolute: siteConfig.defaultTitle },
+  description: homeDescription,
+  alternates: { canonical: absoluteUrl('/') },
+  openGraph: {
+    title: siteConfig.defaultTitle,
+    description: homeDescription,
+    url: siteConfig.domain,
+    siteName: siteConfig.siteName,
+    locale: siteConfig.locale,
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: siteConfig.defaultTitle,
+    description: homeDescription,
+  },
+  robots: { index: true, follow: true },
+};
+
+const structuredData = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: siteConfig.siteName,
+    url: siteConfig.domain,
+    description: homeDescription,
+    inLanguage: siteConfig.language,
+    publisher: {
+      '@type': 'Organization',
+      name: siteConfig.brandName,
+      url: siteConfig.domain,
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: siteConfig.brandName,
+    url: siteConfig.domain,
+    description: homeDescription,
+    areaServed: siteConfig.country,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: siteConfig.siteName,
+    url: siteConfig.domain,
+    description: homeDescription,
+    applicationCategory: 'DatingApplication',
+    operatingSystem: 'Web',
+    areaServed: siteConfig.country,
+    inLanguage: siteConfig.language,
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'GBP',
+      availability: 'https://schema.org/InStock',
+    },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Home',
+        item: siteConfig.domain,
+      },
+    ],
+  },
 ];
 
 /* Builds a direct Unsplash image URL — proxied via /_next/image to avoid ORB */
@@ -104,6 +183,7 @@ function unsplash(id: string, w = 800, h = 600) {
 export default function LandingPage() {
   return (
     <main className="min-h-screen bg-black text-white overflow-x-hidden">
+      <JsonLd data={structuredData} />
 
       {/* ── CONCEPT BANNER ──────────────────────────────────────────────── */}
       <div className="fixed top-0 inset-x-0 z-[60] bg-red-600 text-white text-center text-xs font-semibold py-1.5 tracking-wide">
@@ -172,7 +252,7 @@ export default function LandingPage() {
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-yellow-400/40 bg-yellow-400/10 text-yellow-400 text-xs font-bold uppercase tracking-widest mb-8">
               <Zap className="w-3.5 h-3.5" />
-              The #1 dating app for bikers
+              UK biker dating for real riders
             </div>
 
             <h1 className="text-5xl md:text-7xl font-black leading-[1.05] mb-6 tracking-tight">
@@ -184,9 +264,9 @@ export default function LandingPage() {
             </h1>
 
             <p className="text-lg md:text-xl text-zinc-300 leading-relaxed mb-10 max-w-lg">
-              REVdating is the dating app built exclusively for bikers. Find love,
-              sparks, or your perfect partner — someone who shares your passion
-              for the road and the rumble.
+              REVdating is a UK biker dating app built for motorcyclists and riders.
+              Create a better profile, start safer conversations, and meet people
+              who understand the road, the gear, and the lifestyle.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
@@ -216,7 +296,7 @@ export default function LandingPage() {
               </span>
               <span className="flex items-center gap-1.5">
                 <Heart className="w-3.5 h-3.5 text-red-500" />
-                50K+ bikers dating
+                Built for UK riders
               </span>
             </div>
           </div>
@@ -224,6 +304,35 @@ export default function LandingPage() {
         </div>
 
         <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-black to-transparent z-10" />
+      </section>
+
+
+      {/* ── GEO / AI SEARCH ENTITY COPY ────────────────────────────────── */}
+      <section className="bg-zinc-950 py-16 px-6 border-y border-zinc-900">
+        <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-8">
+          <div className="md:col-span-2">
+            <p className="text-yellow-400 text-sm font-bold uppercase tracking-widest mb-3">
+              UK biker dating app
+            </p>
+            <h2 className="text-3xl md:text-4xl font-black mb-4">
+              Built for motorcyclists, riders, and biker-friendly connections
+            </h2>
+            <p className="text-zinc-300 leading-relaxed text-lg">
+              REVdating helps UK riders build clearer dating profiles, find people who understand
+              motorcycle life, and start conversations with context about bikes, riding style, and
+              what each person is looking for. AI features are used only as optional helpers for
+              profile ideas, icebreakers, ride planning, and safety checks — never to impersonate
+              users or fake engagement.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-zinc-800 bg-black/50 p-6">
+            <h3 className="text-xl font-bold mb-3">Safety-led by design</h3>
+            <p className="text-zinc-400 leading-relaxed">
+              Reporting, blocking, community guidelines, moderation workflows, and safety policies
+              help keep private conversations and rider profiles protected from search indexing.
+            </p>
+          </div>
+        </div>
       </section>
 
       {/* ── BIKE TYPES GRID ─────────────────────────────────────────────── */}
@@ -452,7 +561,7 @@ export default function LandingPage() {
             <span className="text-red-500">biker love?</span>
           </h2>
           <p className="text-zinc-400 text-xl mb-10">
-            Join 50,000+ bikers already dating on REVdating. No credit card needed.
+            Join REVdating to meet motorcyclists and riders across the UK. No credit card needed.
           </p>
           <Link
             href="/register"
@@ -479,7 +588,7 @@ export default function LandingPage() {
               <span className="text-red-600">MATCH</span>
             </span>
             <p className="text-zinc-500 text-sm mt-1">
-              The #1 dating app for bikers
+              UK biker dating for real riders
               <Link href="/admin" className="opacity-0 hover:opacity-0 select-none cursor-default" tabIndex={-1} aria-hidden="true">.</Link>
             </p>
           </div>

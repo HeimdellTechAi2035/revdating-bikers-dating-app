@@ -613,6 +613,12 @@ export default function AdminUsersPage() {
   }, [search, filter, page]);
 
   useEffect(() => { const cancel = loadUsers(); return cancel; }, [loadUsers]);
+  useEffect(() => {
+    const urlFilter = new URLSearchParams(window.location.search).get('filter');
+    if (urlFilter && ['all', 'banned', 'active', 'premium', 'unverified'].includes(urlFilter)) {
+      setFilter(urlFilter);
+    }
+  }, []);
 
   async function doAction(userId: string, action: string, reason?: string) {
     await fetch('/api/admin/ban', {
@@ -668,6 +674,7 @@ export default function AdminUsersPage() {
         >
           <option value="all">All users</option>
           <option value="banned">Banned</option>
+          <option value="active">Active</option>
           <option value="premium">Premium</option>
           <option value="unverified">Unverified</option>
         </select>

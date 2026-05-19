@@ -1,7 +1,25 @@
-﻿import Link from 'next/link';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { absoluteUrl, siteConfig } from '@/lib/seo/site';
 
-export const metadata = {
-  title: 'Cookie Policy — REVdating',
+export const metadata: Metadata = {
+  title: 'Cookie Policy',
+  description: 'How REVdating uses essential cookies and similar technologies to operate the biker dating app securely.',
+  alternates: { canonical: absoluteUrl('/cookies') },
+  openGraph: {
+    title: `Cookie Policy | ${siteConfig.siteName}`,
+    description: 'How REVdating uses essential cookies and similar technologies to operate the biker dating app securely.',
+    url: absoluteUrl('/cookies'),
+    siteName: siteConfig.siteName,
+    locale: siteConfig.locale,
+    type: 'article',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `Cookie Policy | ${siteConfig.siteName}`,
+    description: 'How REVdating uses essential cookies and similar technologies to operate the biker dating app securely.',
+  },
+  robots: { index: true, follow: true },
 };
 
 export default function CookiesPage() {

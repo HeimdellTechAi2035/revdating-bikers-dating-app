@@ -6,16 +6,16 @@ import { isDevBypassEnabled } from '@/lib/dev-bypass';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboard() {
-  // DEV PREVIEW: return zeroed stats so the admin UI is visible without Supabase
+  // Explicit DEV_BYPASS_AUTH preview: return zeroed stats without Supabase.
   if (isDevBypassEnabled()) {
     const stats = [
-      { label: 'Total users',           value: 0, color: 'text-white' },
-      { label: 'Active users',          value: 0, color: 'text-green-400' },
+      { label: 'Total users',           value: 0, color: 'text-white', href: '/admin/users' },
+      { label: 'Active users',          value: 0, color: 'text-green-400', href: '/admin/users?filter=active' },
       { label: 'Pending reports',       value: 0, color: 'text-white', href: '/admin/reports' },
       { label: 'Photos to review',      value: 0, color: 'text-white', href: '/admin/photos' },
       { label: 'Pending verifications', value: 0, color: 'text-blue-400', href: '/admin/verifications' },
-      { label: 'Banned users',          value: 0, color: 'text-red-400' },
-      { label: 'Premium users',         value: 0, color: 'text-brand-orange' },
+      { label: 'Banned users',          value: 0, color: 'text-red-400', href: '/admin/users?filter=banned' },
+      { label: 'Premium users',         value: 0, color: 'text-brand-orange', href: '/admin/users?filter=premium' },
     ];
     return (
       <div className="space-y-8">
@@ -75,13 +75,13 @@ export default async function AdminDashboard() {
   ]);
 
   const stats = [
-    { label: 'Total users', value: totalUsers ?? 0, color: 'text-white' },
-    { label: 'Active users', value: activeUsers ?? 0, color: 'text-green-400' },
+    { label: 'Total users', value: totalUsers ?? 0, color: 'text-white', href: '/admin/users' },
+    { label: 'Active users', value: activeUsers ?? 0, color: 'text-green-400', href: '/admin/users?filter=active' },
     { label: 'Pending reports', value: pendingReports ?? 0, color: pendingReports ? 'text-red-400' : 'text-white', href: '/admin/reports' },
     { label: 'Photos to review', value: pendingPhotos ?? 0, color: pendingPhotos ? 'text-yellow-400' : 'text-white', href: '/admin/photos' },
     { label: 'Pending verifications', value: pendingVerifications ?? 0, color: pendingVerifications ? 'text-blue-400' : 'text-white', href: '/admin/verifications' },
-    { label: 'Banned users', value: bannedUsers ?? 0, color: 'text-red-400' },
-    { label: 'Premium users', value: premiumUsers ?? 0, color: 'text-brand-orange' },
+    { label: 'Banned users', value: bannedUsers ?? 0, color: 'text-red-400', href: '/admin/users?filter=banned' },
+    { label: 'Premium users', value: premiumUsers ?? 0, color: 'text-brand-orange', href: '/admin/users?filter=premium' },
   ];
 
   return (

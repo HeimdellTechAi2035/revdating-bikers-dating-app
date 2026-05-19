@@ -15,9 +15,12 @@ export async function GET(request: Request) {
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
-    console.error('Auth callback error:', error.message);
+    console.error('Auth callback error:', error);
+    const message = error.message.toLowerCase().includes('code verifier')
+      ? 'signin_session_expired'
+      : 'signin_failed';
     return NextResponse.redirect(
-      new URL(`/login?error=${encodeURIComponent(error.message)}`, request.url)
+      new URL(`/login?error=${message}`, request.url)
     );
   }
 

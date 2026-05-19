@@ -1,8 +1,25 @@
-﻿import Link from 'next/link';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { absoluteUrl, siteConfig } from '@/lib/seo/site';
 
-export const metadata = {
-  title: 'Privacy Policy — REVdating',
-  description: 'How REVdating collects, uses, and protects your personal data.',
+export const metadata: Metadata = {
+  title: 'Privacy Policy',
+  description: 'How REVdating collects, uses, and protects personal data for the UK biker dating app.',
+  alternates: { canonical: absoluteUrl('/privacy') },
+  openGraph: {
+    title: `Privacy Policy | ${siteConfig.siteName}`,
+    description: 'How REVdating collects, uses, and protects personal data for the UK biker dating app.',
+    url: absoluteUrl('/privacy'),
+    siteName: siteConfig.siteName,
+    locale: siteConfig.locale,
+    type: 'article',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `Privacy Policy | ${siteConfig.siteName}`,
+    description: 'How REVdating collects, uses, and protects personal data for the UK biker dating app.',
+  },
+  robots: { index: true, follow: true },
 };
 
 const LAST_UPDATED = '29 April 2026';
@@ -72,7 +89,7 @@ export default function PrivacyPage() {
             <li>Supabase (database and authentication hosting, EU/US)</li>
             <li>Stripe (payment processing)</li>
             <li>Sightengine (image moderation)</li>
-            <li>OneSignal (push notifications)</li>
+            <li>Web Push/VAPID (push notifications)</li>
             <li>Law enforcement or regulators when legally required</li>
           </ul>
         </Section>

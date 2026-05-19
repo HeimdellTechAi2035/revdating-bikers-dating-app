@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
   const url = new URL(request.url);
   const search = url.searchParams.get('search') ?? '';
-  const filter = url.searchParams.get('filter') ?? 'all'; // all | banned | premium | unverified
+  const filter = url.searchParams.get('filter') ?? 'all'; // all | banned | active | premium | unverified
   const page = Math.max(1, parseInt(url.searchParams.get('page') ?? '1'));
   const perPage = 20;
 
@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (filter === 'banned') query = query.eq('is_banned', true);
+  else if (filter === 'active') query = query.eq('is_active', true).eq('is_banned', false);
   else if (filter === 'premium') query = query.eq('is_premium', true);
   else if (filter === 'unverified') query = query.eq('is_verified', false);
 

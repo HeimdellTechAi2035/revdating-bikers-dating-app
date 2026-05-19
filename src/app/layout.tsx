@@ -1,17 +1,11 @@
-﻿import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import type { Metadata, Viewport } from 'next';
 import { Toaster } from 'react-hot-toast';
 import CookieBanner from '@/components/compliance/CookieBanner';
 import AnalyticsProvider from '@/components/analytics/AnalyticsProvider';
 import DisableDevTools from '@/components/security/DisableDevTools';
 import InstallPrompt from '@/components/pwa/InstallPrompt';
+import { absoluteUrl, siteConfig } from '@/lib/seo/site';
 import './globals.css';
-
-const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-inter',
-});
 
 export const viewport: Viewport = {
   themeColor:          '#FF6B00',
@@ -23,30 +17,47 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteConfig.domain),
   title: {
-    default: 'REVdating — Dating for Bikers',
-    template: '%s | REVdating',
+    default: siteConfig.defaultTitle,
+    template: siteConfig.titleTemplate,
   },
-  description:
-    'Find your perfect riding companion. REVdating is the dating app built exclusively for the biker community.',
-  keywords: ['biker dating', 'motorcycle dating', 'biker singles', 'REVdating'],
-  authors: [{ name: 'REVdating' }],
-  creator: 'REVdating',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
+  description: siteConfig.defaultDescription,
+  keywords: [
+    'UK biker dating',
+    'biker dating',
+    'motorcycle dating',
+    'motorcyclist dating app',
+    'biker singles',
+    'REVdating',
+  ],
+  authors: [{ name: siteConfig.brandName }],
+  creator: siteConfig.brandName,
+  publisher: siteConfig.brandName,
+  alternates: {
+    canonical: siteConfig.domain,
+  },
   openGraph: {
     type: 'website',
-    locale: 'en_GB',
-    url: process.env.NEXT_PUBLIC_APP_URL,
-    title: 'REVdating — Dating for Bikers',
-    description: 'Find your perfect riding companion.',
-    siteName: 'REVdating',
-    // opengraph-image.tsx in this directory auto-generates the og:image tag
+    locale: siteConfig.locale,
+    url: siteConfig.domain,
+    title: siteConfig.defaultTitle,
+    description: siteConfig.defaultDescription,
+    siteName: siteConfig.siteName,
+    images: [
+      {
+        url: absoluteUrl(siteConfig.socialImagePath),
+        width: 1200,
+        height: 630,
+        alt: 'REVdating — Dating for Bikers',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'REVdating — Dating for Bikers',
-    description: 'Find your perfect riding companion.',
-    // opengraph-image.tsx also covers the twitter:image tag automatically
+    title: siteConfig.defaultTitle,
+    description: siteConfig.defaultDescription,
+    images: [absoluteUrl(siteConfig.socialImagePath)],
   },
   robots: {
     index: true,
@@ -54,10 +65,10 @@ export const metadata: Metadata = {
     googleBot: { index: true, follow: true },
   },
   // PWA / app install metadata
-  applicationName: 'REVdating',
+  applicationName: siteConfig.siteName,
   appleWebApp: {
     capable: true,
-    title: 'REVdating',
+    title: siteConfig.siteName,
     statusBarStyle: 'black-translucent',
   },
   formatDetection: { telephone: false },
@@ -69,7 +80,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en-GB">
       <head>
         {/* Favicon served automatically by src/app/icon.tsx */}
         {/* Apple PWA icons */}

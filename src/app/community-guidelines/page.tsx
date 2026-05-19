@@ -1,8 +1,25 @@
-﻿import Link from 'next/link';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { absoluteUrl, siteConfig } from '@/lib/seo/site';
 
-export const metadata = {
-  title: 'Community Guidelines — REVdating',
-  description: 'The rules and standards that keep REVdating a safe, welcoming community for bikers.',
+export const metadata: Metadata = {
+  title: 'Community Guidelines',
+  description: 'Rules and standards for keeping REVdating a safe, respectful UK biker dating community.',
+  alternates: { canonical: absoluteUrl('/community-guidelines') },
+  openGraph: {
+    title: `Community Guidelines | ${siteConfig.siteName}`,
+    description: 'Rules and standards for keeping REVdating a safe, respectful UK biker dating community.',
+    url: absoluteUrl('/community-guidelines'),
+    siteName: siteConfig.siteName,
+    locale: siteConfig.locale,
+    type: 'article',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `Community Guidelines | ${siteConfig.siteName}`,
+    description: 'Rules and standards for keeping REVdating a safe, respectful UK biker dating community.',
+  },
+  robots: { index: true, follow: true },
 };
 
 const LAST_UPDATED = '27 April 2026';
