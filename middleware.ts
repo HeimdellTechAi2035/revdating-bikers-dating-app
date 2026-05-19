@@ -22,10 +22,40 @@ const PUBLIC_ROUTES = new Set([
   '/admin/login',
   '/api/email/unsubscribe',
 ]);
+
+const PUBLIC_FILE_ROUTES = new Set([
+  '/BingSiteAuth.xml',
+  '/robots.txt',
+  '/sitemap.xml',
+  '/favicon.ico',
+  '/manifest.webmanifest',
+  '/opengraph-image',
+  '/icon',
+  '/sw.js',
+  '/sw.js.map',
+  '/worker-b18b4a7472bb515f.js',
+]);
+
 const PUBLIC_PREFIXES = ['/auth/', '/api/auth/'];
+const PUBLIC_FILE_PREFIXES = ['/icons/', '/.well-known/', '/_next/static/', '/_next/image/'];
+
+function isPublicFile(pathname: string): boolean {
+  return (
+    PUBLIC_FILE_ROUTES.has(pathname) ||
+    PUBLIC_FILE_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+  );
+}
 const ADMIN_PREFIXES = ['/admin', '/api/admin'];
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Public SEO/verification files and static assets must never hit auth logic
+  // or redirect to login.
+  if (isPublicFile(pathname)) {
+    return NextResponse.next({ request });
+  }
+
   // ── EXPLICIT DEV PREVIEW BYPASS ─────────────────────────────────────────────
   // Only enabled when DEV_BYPASS_AUTH=true and never enabled in production.
   if (isDevBypassEnabled()) {
@@ -61,7 +91,6 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { pathname } = request.nextUrl;
 
   // Determine route type
   const isPublic =
@@ -164,12 +193,10 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimisation)
-     * - favicon.ico, sitemap.xml, robots.txt
-     * - public assets (images, fonts, etc.)
+     * Match all paths except public assets already known to Next/Netlify.
+     * Public SEO files are also guarded by isPublicFile() above so they never
+     * reach auth if this matcher changes.
      */
-    '/((?!_next/static|_next/image|favicon\\.ico|sitemap\\.xml|robots\\.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?)$).*)',
+    '/((?!_next/static|_next/image|favicon\\.ico|manifest\\.webmanifest|sitemap\\.xml|robots\\.txt|BingSiteAuth\\.xml|sw\\.js|sw\\.js\\.map|worker-b18b4a7472bb515f\\.js|icons/|\\.well-known/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?)$).*)',
   ],
 };
