@@ -1,8 +1,25 @@
-﻿import Link from 'next/link';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { absoluteUrl, siteConfig } from '@/lib/seo/site';
 
-export const metadata = {
-  title: 'Safety Policy — REVdating',
-  description: 'How REVdating protects its users and handles harmful content.',
+export const metadata: Metadata = {
+  title: 'Safety Policy',
+  description: 'How REVdating uses reporting, blocking, moderation, and community guidelines to support safer biker dating.',
+  alternates: { canonical: absoluteUrl('/safety-policy') },
+  openGraph: {
+    title: `Safety Policy | ${siteConfig.siteName}`,
+    description: 'How REVdating uses reporting, blocking, moderation, and community guidelines to support safer biker dating.',
+    url: absoluteUrl('/safety-policy'),
+    siteName: siteConfig.siteName,
+    locale: siteConfig.locale,
+    type: 'article',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `Safety Policy | ${siteConfig.siteName}`,
+    description: 'How REVdating uses reporting, blocking, moderation, and community guidelines to support safer biker dating.',
+  },
+  robots: { index: true, follow: true },
 };
 
 const LAST_UPDATED = '27 April 2026';

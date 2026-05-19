@@ -1,8 +1,25 @@
-﻿import Link from 'next/link';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { absoluteUrl, siteConfig } from '@/lib/seo/site';
 
-export const metadata = {
-  title: 'Terms of Service — REVdating',
-  description: 'Terms and conditions for using the REVdating dating app.',
+export const metadata: Metadata = {
+  title: 'Terms of Service',
+  description: 'Terms and conditions for using REVdating, the UK biker dating app for motorcycle enthusiasts.',
+  alternates: { canonical: absoluteUrl('/terms') },
+  openGraph: {
+    title: `Terms of Service | ${siteConfig.siteName}`,
+    description: 'Terms and conditions for using REVdating, the UK biker dating app for motorcycle enthusiasts.',
+    url: absoluteUrl('/terms'),
+    siteName: siteConfig.siteName,
+    locale: siteConfig.locale,
+    type: 'article',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `Terms of Service | ${siteConfig.siteName}`,
+    description: 'Terms and conditions for using REVdating, the UK biker dating app for motorcycle enthusiasts.',
+  },
+  robots: { index: true, follow: true },
 };
 
 const LAST_UPDATED = '29 April 2026';

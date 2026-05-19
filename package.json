@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "prebuild": "node scripts/check-duplicate-admin-routes.mjs",
+    "prebuild": "node scripts/check-duplicate-admin-routes.mjs && node scripts/check-seo-private-routes.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
